@@ -245,6 +245,16 @@ function showFatalError(msg){
 window.onerror=function(message, src, line, col, err){
   // Benign browser-level warning (not from this page's own code); ignore it.
   if(typeof message==='string' && message.indexOf('ResizeObserver loop')!==-1) return false;
+  // Errors from somewhere other than this document itself (browser
+  // extensions injecting content scripts, cross-origin scripts, etc.)
+  // are reported by the browser as opaque: no file, or file/line that
+  // isn't this page. Don't scare the user with noise that isn't ours.
+  const ownUrl = (typeof location!=='undefined') ? location.href.split('#')[0].split('?')[0] : '';
+  const isOwnScript = typeof src==='string' && src.length>0 && ownUrl.length>0 && src.indexOf(ownUrl)===0;
+  if(!isOwnScript){
+    console.warn('[paperfold] ignoring non-page error:', message, src, line, col);
+    return false;
+  }
   showFatalError(message+' (line '+line+')');
   return false;
 };
