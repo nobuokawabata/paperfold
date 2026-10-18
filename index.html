@@ -260,7 +260,13 @@ window.onerror=function(message, src, line, col, err){
 };
 const safeStorage={
   get(key, fallback){
-    try{ return window.localStorage.getItem(key); }
+    try{
+      const v=window.localStorage.getItem(key);
+      // getItem legitimately returns null when the key has never been
+      // written (e.g. a brand-new origin's first-ever visit) — that is
+      // NOT an error, but it must still fall back, same as a thrown one.
+      return v===null ? (fallback===undefined?null:fallback) : v;
+    }
     catch(e){ return fallback===undefined?null:fallback; }
   },
   set(key, value){
